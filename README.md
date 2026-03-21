@@ -4,18 +4,31 @@ Rust bindings for Spout2 on Windows.
 
 ## Notes
 
-- This crate wraps SpoutLibrary and builds Spout2 from source during build.
+- This crate provides direct bindings to SpoutLibrary and builds Spout2 from source during build.
 - Windows-only behavior is expected.
-- `build.rs` fetches `Spout2-lean` tag `2.007.011` if sources are not present.
+- Source resolution order:
+    1. `SPOUT2_DIR` environment variable (must point to existing Spout2 sources)
+    2. Local `./Spout2` directory
+    3. Optional auto-fetch when `RUST_SPOUT2_ALLOW_FETCH=1` (clones tag `2.007h`)
+
+### Build setup
+
+```powershell
+# Recommended: use pre-fetched sources
+$env:SPOUT2_DIR = "C:/path/to/Spout2"
+
+# Optional: allow build.rs to fetch sources when missing
+$env:RUST_SPOUT2_ALLOW_FETCH = "1"
+```
 
 ## Example
 
 ```rust
-use rust_spout2::RustySpout;
+use rust_spout2::Spout;
 
 fn main() {
-    let mut spout = RustySpout::new().expect("failed to init spout");
-    let version = spout.get_spout_version().expect("failed to get version");
+    let mut spout = Spout::new().expect("failed to get Spout handle");
+    let version = spout.as_pin_mut().GetSpoutVersion();
     println!("Spout version: {version}");
 }
 ```
