@@ -75,18 +75,18 @@ fn copy_runtime_dlls(spout_build_dir: &Path) {
 fn resolve_spout_source_dir() -> PathBuf {
     if let Ok(dir) = std::env::var(SPOUT_DIR_ENV) {
         let path = PathBuf::from(dir);
-        if path.exists() {
+        if is_valid_spout_source_dir(&path) {
             return path;
         }
         panic!(
-            "{} is set but path does not exist: {}",
+            "{} is set but path is not a valid Spout2 source directory (missing CMakeLists.txt): {}",
             SPOUT_DIR_ENV,
             path.display()
         );
     }
 
     let local = PathBuf::from(SPOUT_DIR);
-    if local.exists() {
+    if is_valid_spout_source_dir(&local) {
         return local;
     }
 
@@ -107,6 +107,10 @@ fn resolve_spout_source_dir() -> PathBuf {
         SPOUT_DIR_ENV,
         SPOUT_ALLOW_FETCH_ENV
     );
+}
+
+fn is_valid_spout_source_dir(path: &Path) -> bool {
+    path.join("CMakeLists.txt").is_file()
 }
 
 fn fetch_spout2_into(dest: PathBuf) -> PathBuf {
