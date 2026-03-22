@@ -31,26 +31,43 @@ fn main() {
 }
 
 fn copy_runtime_dlls(spout_build_dir: &Path) {
-    let target_profile_dir = cargo_target_profile_dir();
-    if let Err(e) = std::fs::create_dir_all(&target_profile_dir) {
+    let bin_dir = spout_build_dir.join("bin");
+    let target_profile_dirs = cargo_target_profile_dirs();
+
+    if target_profile_dirs.is_empty() {
         println!(
-            "cargo:warning=Failed to create runtime output directory {}: {}",
-            target_profile_dir.display(),
-            e
+            "cargo:warning=Could not determine runtime output directory from OUT_DIR={}.",
+            out_dir().display()
         );
         return;
     }
 
-    let bin_dir = spout_build_dir.join("bin");
+    for dir in &target_profile_dirs {
+        if let Err(e) = std::fs::create_dir_all(dir) {
+            println!(
+                "cargo:warning=Failed to create runtime output directory {}: {}",
+                dir.display(),
+                e
+            );
+        }
+    }
+
     for dll_name in ["Spout.dll", "SpoutLibrary.dll"] {
         let src = bin_dir.join(dll_name);
         if !src.exists() {
             continue;
         }
 
-        let dst = target_profile_dir.join(dll_name);
-        if let Err(e) = std::fs::copy(&src, &dst) {
-            println!("cargo:warning=Failed to copy {}: {}", dll_name, e);
+        for target_profile_dir in &target_profile_dirs {
+            let dst = target_profile_dir.join(dll_name);
+            if let Err(e) = std::fs::copy(&src, &dst) {
+                println!(
+                    "cargo:warning=Failed to copy {} to {}: {}",
+                    dll_name,
+                    dst.display(),
+                    e
+                );
+            }
         }
     }
 }
@@ -150,16 +167,37 @@ fn build_spout(spout_source_dir: &Path) -> (PathBuf, PathBuf) {
     (dst.clone(), dst.join("lib"))
 }
 
-fn cargo_target_profile_dir() -> PathBuf {
-    let profile = std::env::var("PROFILE").expect("PROFILE env var is missing");
-    let target_triple = std::env::var("TARGET").expect("TARGET env var is missing");
+fn cargo_target_profile_dirs() -> Vec<PathBuf> {
+    let mut result = Vec::new();
+    let out = out_dir();
 
-    let target_dir = if let Ok(explicit_target_dir) = std::env::var("CARGO_TARGET_DIR") {
-        PathBuf::from(explicit_target_dir)
-    } else {
-        PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR env var is missing"))
-            .join("target")
-    };
+    // OUT_DIR typically resolves to:
+    // <target>/<profile>/build/rust-spout2-*/out
+    // or <target>/<triple>/<profile>/build/rust-spout2-*/out
+    // Copy to both profile roots to support runners that start from either location.
+    let mut current = out.as_path();
+    while let Some(parent) = current.parent() {
+        if current.file_name().and_then(|v| v.to_str()) == Some("build") {
+            if let Some(profile_dir) = current.parent() {
+                push_unique_path(&mut result, profile_dir.to_path_buf());
+                if let Some(target_root) = profile_dir.parent() {
+                    let profile_name = profile_dir
+                        .file_name()
+                        .map(|v| v.to_os_string())
+                        .unwrap_or_default();
+                    push_unique_path(&mut result, target_root.join(profile_name));
+                }
+            }
+            break;
+        }
+        current = parent;
+    }
 
-    target_dir.join(target_triple).join(profile)
+    result
+}
+
+fn push_unique_path(paths: &mut Vec<PathBuf>, path: PathBuf) {
+    if !paths.iter().any(|p| p == &path) {
+        paths.push(path);
+    }
 }
