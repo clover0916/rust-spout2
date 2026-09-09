@@ -18,5 +18,19 @@ jobs:
         with:
           targets: x86_64-pc-windows-msvc
 
+      # Keep binding generation reproducible across runner image updates.
+      - name: Install tested libclang
+        uses: KyleMayes/install-llvm-action@v2
+        with:
+          version: "20.1.8"
+          force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/LLVM-20.1.8-win64.exe
+          directory: ${{ runner.temp }}/llvm20
+          env: false
+
+      - name: Select libclang
+        run: '"LIBCLANG_PATH=$env:LLVM_PATH/bin" >> $env:GITHUB_ENV'
+
       - name: Cargo check
         run: cargo check --target x86_64-pc-windows-msvc
+      - name: Link and test DirectX API
+        run: cargo test --target x86_64-pc-windows-msvc

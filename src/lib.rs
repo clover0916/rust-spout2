@@ -9,6 +9,9 @@ use std::pin::Pin;
 use std::ptr::NonNull;
 use std::rc::Rc;
 
+mod directx;
+pub use directx::DirectXSender;
+
 /// A Windows DWORD.
 pub type DWORD = c_ulong;
 /// A Windows HANDLE.
