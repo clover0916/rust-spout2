@@ -18,7 +18,7 @@ jobs:
         with:
           targets: x86_64-pc-windows-msvc
 
-      # autocxx 0.26 cannot parse every runner-bundled libclang version.
+      # Keep binding generation reproducible across runner image updates.
       - name: Install tested libclang
         uses: KyleMayes/install-llvm-action@v2
         with:

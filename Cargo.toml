@@ -17,9 +17,9 @@ categories = ["api-bindings", "graphics"]
 crate-type = ["lib"]
 
 [dependencies]
-autocxx = "0.26"
+autocxx = "0.30"
 cxx = "1.0"
 
 [build-dependencies]
-autocxx-build = "0.26"
+autocxx-build = "0.30"
 cmake = "0.1"
