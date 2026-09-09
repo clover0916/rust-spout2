@@ -9,7 +9,6 @@ jobs:
     runs-on: windows-latest
     env:
       RUST_SPOUT2_ALLOW_FETCH: "1"
-      LIBCLANG_PATH: ${{ runner.temp }}/llvm22/bin
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,6 +26,9 @@ jobs:
           force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.1/LLVM-22.1.1-win64.exe
           directory: ${{ runner.temp }}/llvm22
           env: false
+
+      - name: Select libclang
+        run: '"LIBCLANG_PATH=$env:LLVM_PATH/bin" >> $env:GITHUB_ENV'
 
       - name: Cargo check
         run: cargo check --target x86_64-pc-windows-msvc
