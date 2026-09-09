@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.4 - 2026-09-10
+
+- Added `DirectXSender` for D3D11 BGRA/RGBA GPU texture sharing without OpenGL or CPU readback.
+- Retain the supplied COM device, reject unsupported textures and device mismatches, and release sender registration on drop.
+- Compile the SpoutDX bridge against the existing pinned Spout2 SDK; preserve the SpoutLibrary API.
+
 ## 0.1.3 - 2026-03-22
 
 - Fixed Spout2 source discovery to require `CMakeLists.txt` instead of only directory existence.

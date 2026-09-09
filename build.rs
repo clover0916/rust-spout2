@@ -18,15 +18,29 @@ fn main() {
     .build()
     .unwrap();
     cxx_builder
+        .file("src/directx.cpp")
+        .file(spout_source_dir.join("SPOUTSDK/SpoutDirectX/SpoutDX/SpoutDX.cpp"))
+        .include(spout_source_dir.join("SPOUTSDK/SpoutDirectX/SpoutDX"))
+        .flag_if_supported("/EHsc")
         .flag_if_supported("-std=c++14")
         .compile("spoutlib");
 
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=src/lib.rs");
+    println!("cargo:rerun-if-changed=src/directx.cpp");
+    println!("cargo:rerun-if-changed=src/directx.rs");
     println!("cargo:rerun-if-env-changed={}", SPOUT_DIR_ENV);
     println!("cargo:rerun-if-env-changed={}", SPOUT_ALLOW_FETCH_ENV);
 
     println!("cargo:rustc-link-lib=SpoutLibrary");
+    println!("cargo:rustc-link-lib=static=Spout_static");
+    for library in [
+        "opengl32", "gdi32", "user32", "shell32", "advapi32", "d3d9", "d3d11", "dxgi", "shlwapi",
+        "version", "winmm", "winspool", "comdlg32", "ole32", "oleaut32", "uuid", "odbc32",
+        "odbccp32",
+    ] {
+        println!("cargo:rustc-link-lib={library}");
+    }
     println!("cargo:rustc-link-search=native={}", lib_dir.display());
 }
 
@@ -139,7 +153,9 @@ fn fetch_spout2_into(dest: PathBuf) -> PathBuf {
         return dest;
     }
 
-    panic!("Unable to clone Spout2 sources. Ensure git is installed and network access is available.");
+    panic!(
+        "Unable to clone Spout2 sources. Ensure git is installed and network access is available."
+    );
 }
 
 fn out_dir() -> PathBuf {
@@ -158,6 +174,10 @@ fn is_packaged_verification_context() -> bool {
 
 fn build_spout(spout_source_dir: &Path) -> (PathBuf, PathBuf) {
     let dst = cmake::Config::new(spout_source_dir)
+        // Rust/cc use the non-debug MSVC CRT even for dev builds. The static
+        // SpoutDX dependency must match its CRT and C++ iterator ABI.
+        .profile("Release")
+        .cxxflag("/EHsc")
         .define("SKIP_INSTALL_ALL", "OFF")
         .define("SKIP_INSTALL_HEADERS", "OFF")
         .define("SKIP_INSTALL_LIBRARIES", "OFF")
