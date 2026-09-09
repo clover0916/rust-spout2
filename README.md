@@ -45,7 +45,8 @@ use ASCII for portable names.
 
 ### Build setup
 
-Install Visual Studio C++ Build Tools, Windows SDK, CMake, and LLVM/libclang.
+Install Visual Studio C++ Build Tools, Windows SDK, CMake, and LLVM/libclang
+22.1.1 (the version tested with autocxx 0.26 and used in CI).
 Place CMake on `PATH` and, if libclang is not found automatically, set
 `LIBCLANG_PATH` to the LLVM `bin` directory. Distribute the generated runtime
 DLLs alongside your executable when using SpoutLibrary, and retain
